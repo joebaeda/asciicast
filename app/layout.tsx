@@ -11,7 +11,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+const baseUrl = "https://asciicast.vercel.app";
 
 const frame = {
   version: "next",
