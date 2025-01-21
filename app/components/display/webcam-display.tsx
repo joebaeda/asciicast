@@ -18,10 +18,11 @@ import {
 import { DisplayCopyButton } from "../../components/display/display-copy-button";
 import { Button } from "../../components/ui/button";
 import { useEffect, useState } from "react";
-import { BaseError, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { BaseError, useAccount, useChainId, useConnect, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { asciiCastAbi, asciiCastAddress } from "@/lib/contract";
 import { parseEther } from "viem";
 import { base } from "wagmi/chains";
+import { wagmiConfig } from "@/lib/wagmiConfig";
 
 interface ArtistProps {
   fname: string
@@ -59,6 +60,8 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const chainId = useChainId();
+  const { isConnected } = useAccount()
+  const { connect } = useConnect();
   const { data: hash, error, isPending, writeContract } = useWriteContract()
 
   const { data: tokenId } = useReadContract({
@@ -173,17 +176,26 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
           tooltip="Download ASCII"
           disabled={!isWebcamActive || !isAsciiActive}
         />
-        <Button
-          onClick={handleMint}
-          disabled={!isWebcamActive || !isAsciiActive || chainId !== base.id || isPending || isConfirming || isConfirmed || isGenerating}
-          className="absolute right-12 px-4 py-2 rounded-full"
-        >
-          {isGenerating ? "Generating..." : isPending
-            ? "Confirming..."
-            : isConfirming
-              ? "Waiting..."
-              : isConfirmed ? "Minted! 🎉" : "Mint to Base"}
-        </Button>
+        {isConnected ? (
+          <Button
+            onClick={handleMint}
+            disabled={!isConnected || !isWebcamActive || !isAsciiActive || chainId !== base.id || isPending || isConfirming || isConfirmed || isGenerating}
+            className="absolute right-12 px-4 py-2 rounded-full"
+          >
+            {isGenerating ? "Generating..." : isPending
+              ? "Confirming..."
+              : isConfirming
+                ? "Waiting..."
+                : isConfirmed ? "Minted! 🎉" : "Mint to Base"}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => connect({ connector: wagmiConfig.connectors[0] })}
+            className="absolute right-12 px-4 py-2 rounded-full"
+          >
+            Connect Wallet
+          </Button>
+        )}
       </DisplayActionsContainer>
 
       <DisplayCanvasContainer>
@@ -223,7 +235,7 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
       {/* Transaction Error */}
       {showError && error && (
         <div className="fixed p-4 inset-0 items-center justify-center z-10 bg-gray-900 bg-opacity-50">
-          <div className="w-full flex flex-col max-w-[384px] mx-auto bg-red-500 space-y-4">
+          <div className="w-full p-4 flex flex-col max-w-[384px] mx-auto bg-red-500 space-y-4">
             <p className="text-center text-white">Error: {(error as BaseError).shortMessage || error.message}</p>
             <Button
               onClick={() => setShowError(false)}
