@@ -35,7 +35,7 @@ export default function Page() {
     async function fetchData() {
       try {
         if (added) {
-          const res = await fetch(`/api/profiles/${String(fid)}`);
+          const res = await fetch(`/api/profiles/${fid}`);
           if (!res.ok) {
             throw new Error(`Failed to fetch user data: ${res.statusText}`);
           }

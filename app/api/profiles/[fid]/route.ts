@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { fid: string } }
-) {
+type ProfileParams = {
+  params: {
+    fid: string
+  }
+}
+
+export async function GET(req: NextRequest, { params }: ProfileParams) {
   try {
     const fid = params.fid;
 
