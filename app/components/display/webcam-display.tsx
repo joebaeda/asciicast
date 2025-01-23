@@ -89,14 +89,42 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
               notificationDetails: { url, token },
               title: `New ASCII Art by @${fname}`,
               body: "One Awesome ASCII Art has been minted on the @base Network.",
-              targetUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/${Number(tokenId) + 1}`,
+              targetUrl: `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`,
             }),
           });
         } catch (error) {
           console.error("Notification error:", error);
         }
       };
+
+      async function shareCast() {
+        try {
+
+          const castText = "One Masterpieces of ASCII Art Animation has been minted on the  network by ";
+          const siteUrl = `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`;
+
+          const message = { castText: castText, siteUrl: siteUrl, castMentions: fid };
+
+          const response = await fetch("/api/share-cast", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(message),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to share cast.");
+          }
+
+
+        } catch (error: unknown) {
+          console.error("Error share cast:", (error as Error).message);
+        }
+      }
+
       notifyUser();
+      shareCast();
     }
   })
 
@@ -105,7 +133,7 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
       setShowError(true)
     }
 
-  }, [error])
+  }, [chainId, error])
 
   function startWebcam() {
     _startWebcam();
@@ -156,6 +184,7 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
           icon={isWebcamActive ? CameraOff : Camera}
           tooltip={isWebcamActive ? "Stop webcam" : "Start webcam"}
           loading={isWebcamLoading}
+          disabled={!isConnected}
         />
         <DisplayActionButton
           onClick={toggleAscii}
@@ -193,7 +222,7 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
             onClick={() => connect({ connector: wagmiConfig.connectors[0] })}
             className="absolute right-12 px-4 py-2 rounded-full"
           >
-            Connect Wallet
+            Connect
           </Button>
         )}
       </DisplayActionsContainer>
@@ -203,7 +232,7 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
           <Button
             variant="secondary"
             onClick={startWebcam}
-            disabled={isWebcamLoading}
+            disabled={!isConnected || isWebcamLoading}
           >
             <Camera className="size-4 text-muted-foreground" />
             Start
@@ -228,14 +257,14 @@ export function WebcamDisplay({ fname, fid, url, token }: ArtistProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-green-500"
-          >Joe</a></span>
+          >Joe bae</a></span>
         </div>
       </DisplayFooterContainer>
 
       {/* Transaction Error */}
       {showError && error && (
-        <div className="fixed p-4 inset-0 items-center justify-center z-10 bg-gray-900 bg-opacity-50">
-          <div className="w-full p-4 flex flex-col max-w-[384px] mx-auto bg-red-500 space-y-4">
+        <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
+          <div className="w-full h-full items-center justify-center rounded-lg p-4 flex flex-col max-h-[360px] max-w-[360px] mx-auto bg-[#250f31] space-y-4">
             <p className="text-center text-white">Error: {(error as BaseError).shortMessage || error.message}</p>
             <Button
               onClick={() => setShowError(false)}

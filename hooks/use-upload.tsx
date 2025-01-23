@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type UploadType = "image" | "video" | null;
+type UploadType = "video" | null;
 
 export function useUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [hasUpload, setHasUpload] = useState(false);
+  const [onlyVideo, setOnlyVideo] = useState(false);
   const [type, setType] = useState<UploadType>(null);
   const uploadRef = useRef<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -80,19 +81,6 @@ export function useUpload() {
     render();
   }
 
-  async function uploadImage(file: File) {
-    setType("image");
-
-    const img = new Image();
-    uploadRef.current = img;
-    const objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
-    await img.decode();
-    URL.revokeObjectURL(objectUrl);
-
-    await paint(img);
-  }
-
   async function upload(file: File) {
     if (isUploading || hasUpload) return;
     setIsUploading(true);
@@ -103,7 +91,7 @@ export function useUpload() {
       if (file.type.startsWith("video/")) {
         await uploadVideo(file);
       } else {
-        await uploadImage(file);
+        setOnlyVideo(true)
       }
 
       setHasUpload(true);
@@ -162,6 +150,8 @@ export function useUpload() {
   return {
     isUploading,
     hasUpload,
+    onlyVideo,
+    setOnlyVideo,
     type,
     inputRef,
     canvasRef,

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     try {
         const { castText, siteUrl, castMentions } = await request.json();
 
-        if (!castText && !siteUrl) {
+        if (!castText && !siteUrl && !castMentions) {
             return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
         }
 
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
             embeds: [{ url: siteUrl }],
             embedsDeprecated: [],
             mentions: [12142, castMentions],
-            mentionsPositions: [62, 74],
+            mentionsPositions: [63, 75],
+            parentUrl: "https://warpcast.com/~/channel/asciicast",
             type: CastType.CAST,
         };
 

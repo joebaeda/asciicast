@@ -31,16 +31,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "../../components/ui/tooltip";
-import { Card, CardDescription, CardHeader } from "../ui/card";
+import { Card, CardHeader } from "../ui/card";
 
 interface ProfileProps {
   name: string
   fname: string
-  bio: string
   pfp: string
 }
 
-export function Controls({ name, fname, bio, pfp }: ProfileProps) {
+export function Controls({ name, fname, pfp }: ProfileProps) {
   const { config, updateConfig } = useAsciiFrame();
   const [isAspectRatioLocked, setIsAspectRatioLocked] = useState(true);
   const [aspectRatio, setAspectRatio] = useState(
@@ -127,7 +126,6 @@ export function Controls({ name, fname, bio, pfp }: ProfileProps) {
             <TooltipContent>Reset</TooltipContent>
           </Tooltip>
         </CardHeader>
-        <CardDescription>{bio}</CardDescription>
       </Card>
 
       <div className="flex flex-col gap-2">

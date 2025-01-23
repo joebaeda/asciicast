@@ -10,7 +10,8 @@ const FAKE_FRAME_CONTEXT: FrameContext | undefined =
     ? {
         user: {
           fid: 891914,
-          username: "Joe bae",
+          username: "joebaeda",
+          displayName: "Joe Bae",
           pfpUrl:
             'https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/546751af-a70a-49b5-c968-886df0121d00/rectcrop3',
         },
@@ -26,6 +27,7 @@ const FAKE_FRAME_CONTEXT: FrameContext | undefined =
 type FrameContextProviderContextValue = {
   fid: number;
   username: string | undefined;
+  displayName: string | undefined;
   pfpUrl: string | undefined;
   url: string | undefined;
   token: string | undefined;
@@ -78,7 +80,7 @@ function FrameContextProvider({ children }: React.PropsWithChildren) {
 
   return (
     <FrameContextProviderContext.Provider
-      value={{ fid: frameContext.user.fid, username: frameContext.user.username, pfpUrl: frameContext.user.pfpUrl, url: frameContext.client.notificationDetails?.url, token: frameContext.client.notificationDetails?.token, added: frameContext.client.added, safeAreaInsets: frameContext.client.safeAreaInsets }}
+      value={{ fid: frameContext.user.fid, username: frameContext.user.username, displayName: frameContext.user.displayName, pfpUrl: frameContext.user.pfpUrl, url: frameContext.client.notificationDetails?.url, token: frameContext.client.notificationDetails?.token, added: frameContext.client.added, safeAreaInsets: frameContext.client.safeAreaInsets }}
     >
       {children}
     </FrameContextProviderContext.Provider>

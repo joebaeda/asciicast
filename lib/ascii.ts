@@ -27,8 +27,8 @@ export interface AsciiConfig {
   animate: boolean;
 }
 export const DEFAULT_ASCII_CONFIG: AsciiConfig = {
-  outputWidth: 75,
-  outputHeight: 100,
+  outputWidth: 100,
+  outputHeight: 75,
   chars: ASCII_CHAR_PRESETS[0],
   fontFamily: "monospace",
   fontSize: 16,
