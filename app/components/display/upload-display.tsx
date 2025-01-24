@@ -27,11 +27,9 @@ import { wagmiConfig } from "@/lib/wagmiConfig";
 interface ArtistProps {
   fname: string
   fid: number
-  url: string
-  token: string
 }
 
-export function UploadDisplay({ fname, fid, url, token }: ArtistProps) {
+export function UploadDisplay({ fname, fid }: ArtistProps) {
   const { config } = useAsciiFrame();
   const {
     isUploading,
@@ -80,59 +78,6 @@ export function UploadDisplay({ fname, fid, url, token }: ArtistProps) {
     })
 
   useEffect(() => {
-    if (isConfirmed) {
-      // Notify user
-      async function notifyUser() {
-        try {
-          await fetch('/api/send-notify', {
-            method: 'POST',
-            mode: 'same-origin',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fid: 891914,
-              notificationDetails: { url, token },
-              title: `New ASCII Art by @${fname}`,
-              body: "One Awesome ASCII Art has been minted on the @base Network.",
-              targetUrl: `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`,
-            }),
-          });
-        } catch (error) {
-          console.error("Notification error:", error);
-        }
-      };
-
-      async function shareCast() {
-        try {
-
-          const castText = "One Masterpieces of ASCII Art Animation has been minted on the  network by ";
-          const siteUrl = `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`;
-
-          const message = { castText: castText, siteUrl: siteUrl, castMentions: fid };
-
-          const response = await fetch("/api/share-cast", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(message),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "Failed to share cast.");
-          }
-
-
-        } catch (error: unknown) {
-          console.error("Error share cast:", (error as Error).message);
-        }
-      }
-
-      notifyUser();
-      shareCast();
-    }
-  })
-
-  useEffect(() => {
     if (error) {
       setShowError(true)
     }
@@ -149,6 +94,20 @@ export function UploadDisplay({ fname, fid, url, token }: ArtistProps) {
     }
   }, [hasUpload, showAscii]);
 
+  useEffect(() => {
+    // Only share cast if mint is confirmed
+    if (isConfirmed) {
+      async function sendCast() {
+        await shareCast({
+          castText: "A NEW ASCII HAS BEEN MINTED ONCHAIN! by  ",
+          siteUrl: `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`,
+          castMentions: fid
+        });
+      }
+      sendCast()
+    }
+  })
+
   function toggleAscii() {
     if (isAsciiActive) {
       hideAscii();
@@ -159,24 +118,52 @@ export function UploadDisplay({ fname, fid, url, token }: ArtistProps) {
 
   const handleMint = async () => {
     setIsGenerating(true)
-    const ipfsImageHash = await imageHash()
-    const ipfsAnimationHash = await animationHash()
-    if (ipfsImageHash && ipfsAnimationHash) {
 
-      setIsGenerating(false)
+    try {
+      const ipfsImageHash = await imageHash();
+      const ipfsAnimationHash = await animationHash();
 
-      writeContract({
-        abi: asciiCastAbi,
-        chainId: base.id,
-        address: asciiCastAddress as `0x${string}`,
-        functionName: "mint",
-        value: parseEther("0.003"),
-        args: [`ipfs://${ipfsImageHash}`, `ipfs://${ipfsAnimationHash}`, `@${fname}`, animationColor, animationPreset, String(fid)],
+      setIsGenerating(false);
+
+      if (ipfsImageHash && ipfsAnimationHash) {
+        // Call the mint contract
+        writeContract({
+          abi: asciiCastAbi,
+          chainId: base.id,
+          address: asciiCastAddress as `0x${string}`,
+          functionName: "mint",
+          value: parseEther("0.003"),
+          args: [`ipfs://${ipfsImageHash}`, `ipfs://${ipfsAnimationHash}`, `@${fname}`, animationColor, animationPreset, String(fid)],
+        });
+
+      } else {
+        console.error("Failed to mint animation to base")
+      }
+    } catch (error: unknown) {
+      console.error("Error during minting or sharing:", (error as Error).message);
+    } finally {
+      setIsGenerating(false); // Always stop loading indicator
+    }
+  };
+
+  // Utility to share cast
+  const shareCast = async (message: { castText: string; siteUrl: string; castMentions: number }) => {
+    try {
+      const response = await fetch("/api/share-cast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(message),
       });
 
-    } else {
-      console.error("Failed to mint animation to base");
-      setIsGenerating(false)
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to share cast.");
+      }
+
+      console.log("Cast shared successfully:", data);
+    } catch (error: unknown) {
+      console.error("Error sharing cast:", (error as Error).message);
     }
   };
 
@@ -208,18 +195,18 @@ export function UploadDisplay({ fname, fid, url, token }: ArtistProps) {
           onClick={toggleAscii}
           icon={!hasUpload || !isAsciiActive ? Eye : EyeOff}
           tooltip={!hasUpload || !isAsciiActive ? "Show ASCII" : "Hide ASCII"}
-          disabled={!hasUpload}
+          disabled={!isConnected || !hasUpload || isPending || isConfirming || isConfirmed || isGenerating}
         />
         <DisplayCopyButton
           onCopy={copyAscii}
           tooltip="Copy ASCII"
-          disabled={!hasUpload || !isAsciiActive}
+          disabled={!isConnected || !hasUpload || !isAsciiActive || isPending || isConfirming || isConfirmed || isGenerating}
         />
         <DisplayActionButton
           onClick={freeDownload}
           icon={Download}
           tooltip="Download ASCII"
-          disabled={!hasUpload || !isAsciiActive}
+          disabled={!isConnected || !hasUpload || !isAsciiActive || isPending || isConfirming || isConfirmed || isGenerating}
         />
         {isConnected ? (
           <Button

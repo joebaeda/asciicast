@@ -162,8 +162,8 @@ export function useAscii(
       // Start rendering frames after the media recorder is initialized
       renderFrames();
 
-      // Stop recording after a certain duration (e.g., 20 seconds or longer)
-      const recordDuration = 20000; // Adjust the time as needed
+      // Stop recording after a certain duration (e.g., 15 seconds or longer)
+      const recordDuration = 15000; // Adjust the time as needed
       setTimeout(() => {
         mediaRecorder.stop();
       }, recordDuration);
@@ -171,40 +171,43 @@ export function useAscii(
   }
 
   async function saveAnimationHash() {
-
     try {
       // Generate the video Blob using the generateAnimation function
-      const videoBlob = await generateAnimation();  // Pass the desired FPS (e.g., 60 FPS)
-
-      // Create FormData for Pinata upload
+      const videoBlob = await generateAnimation();
+  
+      // Check if the generated Blob is valid
+      if (!videoBlob) {
+        throw new Error("Video Blob is empty or undefined.");
+      }
+  
       // Get the current UTC date and time
       const utcDateTimeString: string = utcDateTime.getUTCDateTime();
+  
+      // Prepare FormData for Pinata upload
       const formData = new FormData();
-      formData.append('file', videoBlob, `asciicast-video-${utcDateTimeString}`);
-      try {
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-
-        const data = await response.json();
-
-        if (response.ok) {
-          return data.ipfsHash; // Set the IPFS hash on success
-        } else {
-          console.log({ message: 'Something went wrong', type: 'error' });
-        }
-
-      } catch (error) {
-        console.error("Failed to save Animation hash:", error);
+      formData.append("file", videoBlob, `asciicast-video-${utcDateTimeString}`);
+  
+      // Upload to your API
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+  
+      // Parse the response JSON
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log("Animation hash saved successfully:", data.ipfsHash);
+        return data.ipfsHash; // Return the IPFS hash on success
+      } else {
+        console.error("Error response from /api/upload:", data);
+        throw new Error(data.message || "Failed to upload animation.");
       }
     } catch (error) {
       console.error("Failed to save Animation hash:", error);
+      throw error; // Rethrow the error for higher-level handling
     }
   }
-
 
 
   // Reset animation on config change

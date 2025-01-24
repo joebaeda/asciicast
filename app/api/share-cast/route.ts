@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
             text: castText,
             embeds: [{ url: siteUrl }],
             embedsDeprecated: [],
-            mentions: [12142, castMentions],
-            mentionsPositions: [63, 75],
+            mentions: [castMentions],
+            mentionsPositions: [40],
             parentUrl: "https://warpcast.com/~/channel/asciicast",
             type: CastType.CAST,
         };

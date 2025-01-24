@@ -15,7 +15,7 @@ import sdk from "@farcaster/frame-sdk";
 export default function Page() {
   const { display } = useAsciiFrame();
   // Farcaster
-  const { fid, username, displayName, pfpUrl, added, url, token, safeAreaInsets } = useViewer();
+  const { fid, username, displayName, pfpUrl, added, safeAreaInsets } = useViewer();
 
   useEffect(() => {
     if (!added) {
@@ -27,7 +27,7 @@ export default function Page() {
     <div style={typeof safeAreaInsets === 'undefined'
       ? undefined
       : { paddingBottom: safeAreaInsets.bottom * 2.25 }}>
-      {display === "webcam" ? <WebcamDisplay fname={username as string} fid={fid} url={url as string} token={token as string} /> : <UploadDisplay fname={username as string} fid={fid} url={url as string} token={token as string} />}
+      {display === "webcam" ? <WebcamDisplay fname={username as string} fid={fid} /> : <UploadDisplay fname={username as string} fid={fid} />}
       <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
         <SidebarContent>
           <SidebarGroup>
