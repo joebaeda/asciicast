@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Eye, EyeOff, Upload, X } from "lucide-react";
 
 import { useAsciiFrame } from "@/context/AsciiFrameProvider";
@@ -18,18 +18,15 @@ import {
 } from "../../components/display/display-containers";
 import { DisplayCopyButton } from "../../components/display/display-copy-button";
 import { Button } from "../../components/ui/button";
-import { BaseError, useAccount, useChainId, useConnect, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import { asciiCastAbi, asciiCastAddress } from "@/lib/contract";
-import { base } from "wagmi/chains";
-import { parseEther } from "viem";
+import { useAccount, useConnect } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmiConfig";
+import sdk from "@farcaster/frame-sdk";
 
-interface ArtistProps {
-  fname: string
-  fid: number
+interface UploadProps {
+  isAsciiBalanceLow: boolean
 }
 
-export function UploadDisplay({ fname, fid }: ArtistProps) {
+export function UploadDisplay({isAsciiBalanceLow}: UploadProps) {
   const { config } = useAsciiFrame();
   const {
     isUploading,
@@ -45,43 +42,20 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
   const {
     isActive: isAsciiActive,
     canvasRef: asciiCanvasRef,
-    asciiColor: animationColor,
-    asciiPreset: animationPreset,
     show: showAscii,
     hide: hideAscii,
     copy: copyAscii,
-    download: freeDownload,
-    saveImageHash: imageHash,
-    saveAnimationHash: animationHash
+    generateAnimation: generateVideo
   } = useAscii(uploadCanvasRef.current, {
     ...config,
     animate: type === "video",
   });
   const initialised = useRef(false);
-  const [showError, setShowError] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const chainId = useChainId();
   const { isConnected } = useAccount()
   const { connect } = useConnect();
-  const { data: hash, error, isPending, writeContract } = useWriteContract()
-
-  const { data: tokenId } = useReadContract({
-    address: asciiCastAddress as `0x${string}`,
-    abi: asciiCastAbi,
-    functionName: "totalSupply",
-  });
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
-
-  useEffect(() => {
-    if (error) {
-      setShowError(true)
-    }
-  }, [error])
 
   useEffect(() => {
     if (hasUpload) {
@@ -94,20 +68,6 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
     }
   }, [hasUpload, showAscii]);
 
-  useEffect(() => {
-    // Only share cast if mint is confirmed
-    if (isConfirmed) {
-      async function sendCast() {
-        await shareCast({
-          castText: "A NEW ASCII HAS BEEN MINTED ONCHAIN! by  ",
-          siteUrl: `https://opensea.io/assets/base/0x837969d05cb1c8108356bc49e58e568c2698d90c/${Number(tokenId) + 1}`,
-          castMentions: fid
-        });
-      }
-      sendCast()
-    }
-  })
-
   function toggleAscii() {
     if (isAsciiActive) {
       hideAscii();
@@ -116,57 +76,42 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
     }
   }
 
-  const handleMint = async () => {
+  const buyAsciiToken = useCallback(() => {
+    sdk.actions.openUrl('https://clank.fun/t/0x0A5053E62B6a452300D18AeEf495C89DDF4C7B05')
+  },[])
+
+  const handleSaveAsImage = useCallback(() => {
+    if (asciiCanvasRef.current) {
+      const imageUrl = asciiCanvasRef.current.toDataURL("image/png")
+      sdk.actions.openUrl(imageUrl)
+    }
+  }, [asciiCanvasRef])
+
+  const handleSaveAsVideo = useCallback(async () => {
     setIsGenerating(true)
-
     try {
-      const ipfsImageHash = await imageHash();
-      const ipfsAnimationHash = await animationHash();
+      // Generate the video Blob using the generateAnimation function
+      const videoBlob = await generateVideo()
+      setIsGenerating(false)
 
-      setIsGenerating(false);
-
-      if (ipfsImageHash && ipfsAnimationHash) {
-        // Call the mint contract
-        writeContract({
-          abi: asciiCastAbi,
-          chainId: base.id,
-          address: asciiCastAddress as `0x${string}`,
-          functionName: "mint",
-          value: parseEther("0.003"),
-          args: [`ipfs://${ipfsImageHash}`, `ipfs://${ipfsAnimationHash}`, `@${fname}`, animationColor, animationPreset, String(fid)],
-        });
-
-      } else {
-        console.error("Failed to mint animation to base")
-      }
-    } catch (error: unknown) {
-      console.error("Error during minting or sharing:", (error as Error).message);
-    } finally {
-      setIsGenerating(false); // Always stop loading indicator
-    }
-  };
-
-  // Utility to share cast
-  const shareCast = async (message: { castText: string; siteUrl: string; castMentions: number }) => {
-    try {
-      const response = await fetch("/api/share-cast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(message),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to share cast.");
+      // Check if the generated Blob is valid
+      if (!videoBlob) {
+        throw new Error("Video Blob is empty or undefined.")
       }
 
-      console.log("Cast shared successfully:", data);
-    } catch (error: unknown) {
-      console.error("Error sharing cast:", (error as Error).message);
-    }
-  };
+      // Create a URL for the Blob
+      const videoUrl = URL.createObjectURL(videoBlob)
 
+      sdk.actions.openUrl(videoUrl)
+      setIsSuccess(true)
+
+      // Clean up the URL object
+      URL.revokeObjectURL(videoUrl)
+    } catch (error) {
+      console.error("Failed to save As Video:", error)
+      throw error // Rethrow the error for higher-level handling
+    }
+  }, [generateVideo])
 
   return (
     <DisplayContainer>
@@ -176,7 +121,7 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
           icon={hasUpload ? X : Upload}
           tooltip={hasUpload ? "Remove Upload" : "Upload Media"}
           loading={isUploading}
-          disabled={!isConnected}
+          disabled={!isConnected || isAsciiBalanceLow}
         />
         <input
           ref={uploadInputRef}
@@ -195,30 +140,26 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
           onClick={toggleAscii}
           icon={!hasUpload || !isAsciiActive ? Eye : EyeOff}
           tooltip={!hasUpload || !isAsciiActive ? "Show ASCII" : "Hide ASCII"}
-          disabled={!isConnected || !hasUpload || isPending || isConfirming || isConfirmed || isGenerating}
+          disabled={!isConnected || !hasUpload || isGenerating || isAsciiBalanceLow}
         />
         <DisplayCopyButton
           onCopy={copyAscii}
           tooltip="Copy ASCII"
-          disabled={!isConnected || !hasUpload || !isAsciiActive || isPending || isConfirming || isConfirmed || isGenerating}
+          disabled={!isConnected || !hasUpload || !isAsciiActive || isGenerating || isAsciiBalanceLow}
         />
         <DisplayActionButton
-          onClick={freeDownload}
+          onClick={handleSaveAsImage}
           icon={Download}
           tooltip="Download ASCII"
-          disabled={!isConnected || !hasUpload || !isAsciiActive || isPending || isConfirming || isConfirmed || isGenerating}
+          disabled={!isConnected || !hasUpload || !isAsciiActive || isGenerating || isAsciiBalanceLow}
         />
         {isConnected ? (
           <Button
-            onClick={handleMint}
-            disabled={!isConnected || !hasUpload || !isAsciiActive || chainId !== base.id || isPending || isConfirming || isConfirmed || isGenerating}
+            onClick={handleSaveAsVideo}
+            disabled={!isConnected || !hasUpload || !isAsciiActive || isGenerating || isAsciiBalanceLow}
             className="absolute right-12 px-4 py-2 rounded-full"
           >
-            {isGenerating ? "Generating..." : isPending
-              ? "Confirming..."
-              : isConfirming
-                ? "Waiting..."
-                : isConfirmed ? "Minted! 🎉" : "Mint to Base"}
+            {isGenerating ? "Generating..." : isSuccess ? "Saved! 🎉" : "Download"}
           </Button>
         ) : (
           <Button
@@ -235,7 +176,7 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
           <Button
             variant="secondary"
             onClick={() => uploadInputRef.current?.click()}
-            disabled={!isConnected || isUploading}
+            disabled={!isConnected || isUploading || isAsciiBalanceLow}
           >
             <Upload className="size-4 text-muted-foreground" />
             Upload
@@ -264,22 +205,6 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
         </div>
       </DisplayFooterContainer>
 
-      {/* Transaction Error */}
-      {showError && error && (
-        <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
-          <div className="w-full h-full items-center justify-center rounded-lg p-4 flex flex-col max-h-[360px] max-w-[360px] mx-auto bg-[#250f31] space-y-4">
-            <p className="text-center text-white">Error: {(error as BaseError).shortMessage || error.message}</p>
-            <Button
-              onClick={() => setShowError(false)}
-              variant="secondary"
-              disabled={isPending}
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Not Video */}
       {onlyVideo && (
         <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
@@ -288,9 +213,24 @@ export function UploadDisplay({ fname, fid }: ArtistProps) {
             <Button
               onClick={() => setOnlyVideo(false)}
               variant="secondary"
-              disabled={isPending}
             >
               Close
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Ascii Balance is Low */}
+      {isConnected && isAsciiBalanceLow && (
+        <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
+          <div className="w-full h-full items-center justify-center rounded-lg p-4 flex flex-col max-h-[360px] max-w-[360px] mx-auto bg-[#151018] space-y-4">
+            <p className="text-center text-white">It looks like you don&apos;t have enough $ASCII in your wallet and you need to have at least 500K $ASCII to be able to use the features on this frame.</p>
+            <Button
+              onClick={buyAsciiToken}
+              variant="secondary"
+              className="bg-pink-900 hover:bg-pink-950"
+            >
+              Buy on Clank.Fun
             </Button>
           </div>
         </div>

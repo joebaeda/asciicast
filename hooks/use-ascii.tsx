@@ -2,15 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AsciiConfig, generateAsciiText, renderAscii } from "@/lib/ascii";
-import utcDateTime from "@/lib/utcDateTime";
 
 export function useAscii(
   source: HTMLCanvasElement | null,
   config: AsciiConfig,
 ) {
   const [isActive, setIsActive] = useState(false);
-  const [asciiColor, setAsciiColor] = useState("");
-  const [asciiPreset, setAsciiPreset] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationId = useRef<number | null>(null);
 
@@ -24,8 +21,6 @@ export function useAscii(
     }
 
     renderAscii(source, target, config);
-    setAsciiColor(config.colour);
-    setAsciiPreset(config.chars)
 
     if (config.animate) {
       animationId.current = requestAnimationFrame(render);
@@ -62,54 +57,6 @@ export function useAscii(
       return true;
     } catch {
       return false;
-    }
-  }
-
-  function download() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const link = document.createElement("a");
-    // Get the current UTC date and time
-    const utcDateTimeString: string = utcDateTime.getUTCDateTime();
-    link.download = `asciicast-${utcDateTimeString}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }
-
-  async function saveImageHash() {
-    const canvas = canvasRef.current;
-    if (canvas) {
-
-      // Convert canvas to data URL
-      const dataURL = canvas.toDataURL('image/png');
-
-      // Convert data URL to Blob
-      const blob = await fetch(dataURL).then(res => res.blob());
-
-      // Create FormData for Pinata upload
-      // Get the current UTC date and time
-      const utcDateTimeString: string = utcDateTime.getUTCDateTime();
-      const formData = new FormData();
-      formData.append('file', blob, `asciicast-image-${utcDateTimeString}`);
-      try {
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-
-        const data = await response.json();
-
-        if (response.ok) {
-          return data.ipfsHash; // Set the IPFS hash on success
-        } else {
-          console.log({ message: 'Something went wrong', type: 'error' });
-        }
-      } catch (err) {
-        console.log({ message: 'Error uploading file', type: 'error', error: err });
-      }
     }
   }
 
@@ -170,46 +117,6 @@ export function useAscii(
     });
   }
 
-  async function saveAnimationHash() {
-    try {
-      // Generate the video Blob using the generateAnimation function
-      const videoBlob = await generateAnimation();
-  
-      // Check if the generated Blob is valid
-      if (!videoBlob) {
-        throw new Error("Video Blob is empty or undefined.");
-      }
-  
-      // Get the current UTC date and time
-      const utcDateTimeString: string = utcDateTime.getUTCDateTime();
-  
-      // Prepare FormData for Pinata upload
-      const formData = new FormData();
-      formData.append("file", videoBlob, `asciicast-video-${utcDateTimeString}`);
-  
-      // Upload to your API
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-  
-      // Parse the response JSON
-      const data = await response.json();
-  
-      if (response.ok) {
-        console.log("Animation hash saved successfully:", data.ipfsHash);
-        return data.ipfsHash; // Return the IPFS hash on success
-      } else {
-        console.error("Error response from /api/upload:", data);
-        throw new Error(data.message || "Failed to upload animation.");
-      }
-    } catch (error) {
-      console.error("Failed to save Animation hash:", error);
-      throw error; // Rethrow the error for higher-level handling
-    }
-  }
-
-
   // Reset animation on config change
   useEffect(() => {
     if (isActive) {
@@ -239,5 +146,5 @@ export function useAscii(
     return hide;
   }, []);
 
-  return { isActive, asciiColor, asciiPreset, canvasRef, show, hide, copy, download, saveImageHash, saveAnimationHash };
+  return { isActive, canvasRef, show, hide, copy, generateAnimation };
 }
