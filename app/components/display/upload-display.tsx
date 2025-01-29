@@ -26,7 +26,7 @@ interface UploadProps {
   isAsciiBalanceLow: boolean
 }
 
-export function UploadDisplay({isAsciiBalanceLow}: UploadProps) {
+export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
   const { config } = useAsciiFrame();
   const {
     isUploading,
@@ -78,40 +78,59 @@ export function UploadDisplay({isAsciiBalanceLow}: UploadProps) {
 
   const buyAsciiToken = useCallback(() => {
     sdk.actions.openUrl('https://clank.fun/t/0x0A5053E62B6a452300D18AeEf495C89DDF4C7B05')
-  },[])
+  }, [])
 
-  const handleSaveAsImage = useCallback(() => {
+  // Open the saved video URL using sdk.actions.openUrl
+  useEffect(() => {
+    const savedVideoUrl = localStorage.getItem("savedVideoUrl");
+    if (savedVideoUrl) {
+      sdk.actions.openUrl(savedVideoUrl);
+      // Optionally clear the stored URL after opening
+      localStorage.removeItem("savedVideoUrl");
+    }
+  }, []);
+
+  // Open the saved image URL using sdk.actions.openUrl
+  useEffect(() => {
+    const savedImagaeUrl = localStorage.getItem("savedImageUrl");
+    if (savedImagaeUrl) {
+      sdk.actions.openUrl(savedImagaeUrl);
+      // Optionally clear the stored URL after opening
+      localStorage.removeItem("savedImagaeUrl");
+    }
+  }, []);
+
+  const handleSaveAsImage = () => {
     if (asciiCanvasRef.current) {
       const imageUrl = asciiCanvasRef.current.toDataURL("image/png")
-      sdk.actions.openUrl(imageUrl)
+      // Save to localStorage
+      localStorage.setItem("savedImageUrl", imageUrl);
     }
-  }, [asciiCanvasRef])
+  }
 
   const handleSaveAsVideo = useCallback(async () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
     try {
-      // Generate the video Blob using the generateAnimation function
-      const videoBlob = await generateVideo()
-      setIsGenerating(false)
+      // Generate the video Blob using the generateVideo function
+      const videoBlob = await generateVideo();
+      setIsGenerating(false);
 
       // Check if the generated Blob is valid
       if (!videoBlob) {
-        throw new Error("Video Blob is empty or undefined.")
+        throw new Error("Video Blob is empty or undefined.");
       }
 
       // Create a URL for the Blob
-      const videoUrl = URL.createObjectURL(videoBlob)
+      const videoUrl = URL.createObjectURL(videoBlob);
 
-      sdk.actions.openUrl(videoUrl)
-      setIsSuccess(true)
-
-      // Clean up the URL object
-      URL.revokeObjectURL(videoUrl)
+      // Save to localStorage
+      localStorage.setItem("savedVideoUrl", videoUrl);
+      setIsSuccess(true);
     } catch (error) {
-      console.error("Failed to save As Video:", error)
-      throw error // Rethrow the error for higher-level handling
+      console.error("Failed to save As Video:", error);
+      throw error; // Rethrow the error for higher-level handling
     }
-  }, [generateVideo])
+  }, [generateVideo]);
 
   return (
     <DisplayContainer>
