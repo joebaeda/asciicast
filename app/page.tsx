@@ -36,7 +36,7 @@ export default function Page() {
   );
 
   const asciiBalanceSafe = asciiBalance ?? BigInt(0);
-  const isAsciiBalanceLow = asciiBalanceSafe < parseEther('480000000');
+  const isAsciiBalanceLow = asciiBalanceSafe < parseEther('280000000');
 
   useEffect(() => {
     if (added === false) {

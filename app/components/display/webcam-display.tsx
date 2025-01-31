@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, CameraOff, Download, Eye, EyeOff } from "lucide-react";
+import { Camera, CameraOff, Eye, EyeOff } from "lucide-react";
 
 import { useAsciiFrame } from "@/context/AsciiFrameProvider";
 import { useWebcam } from "@/hooks/use-webcam";
@@ -76,31 +76,13 @@ export function WebcamDisplay({ isAsciiBalanceLow }: WebcamProps) {
 
   // Open the saved video URL using sdk.actions.openUrl
   useEffect(() => {
-    const savedVideoUrl = localStorage.getItem("savedVideoUrl");
-    if (savedVideoUrl) {
-      sdk.actions.openUrl(savedVideoUrl);
+    if (isSuccess) {
+      const savedVideoUrl = localStorage.getItem("savedVideoUrl");
+      sdk.actions.openUrl(savedVideoUrl as string);
       // Optionally clear the stored URL after opening
       localStorage.removeItem("savedVideoUrl");
     }
-  }, []);
-
-  // Open the saved image URL using sdk.actions.openUrl
-  useEffect(() => {
-    const savedImagaeUrl = localStorage.getItem("savedImageUrl");
-    if (savedImagaeUrl) {
-      sdk.actions.openUrl(savedImagaeUrl);
-      // Optionally clear the stored URL after opening
-      localStorage.removeItem("savedImagaeUrl");
-    }
-  }, []);
-
-  const handleSaveAsImage = () => {
-    if (asciiCanvasRef.current) {
-      const imageUrl = asciiCanvasRef.current.toDataURL("image/png")
-      // Save to localStorage
-      localStorage.setItem("savedImageUrl", imageUrl);
-    }
-  }
+  }, [isSuccess]);
 
   const handleSaveAsVideo = useCallback(async () => {
     setIsGenerating(true);
@@ -147,12 +129,6 @@ export function WebcamDisplay({ isAsciiBalanceLow }: WebcamProps) {
         <DisplayCopyButton
           onCopy={copyAscii}
           tooltip="Copy ASCII"
-          disabled={!isConnected || !isWebcamActive || !isAsciiActive || isGenerating || isAsciiBalanceLow}
-        />
-        <DisplayActionButton
-          onClick={handleSaveAsImage}
-          icon={Download}
-          tooltip="Download ASCII"
           disabled={!isConnected || !isWebcamActive || !isAsciiActive || isGenerating || isAsciiBalanceLow}
         />
         {isConnected ? (
@@ -211,7 +187,7 @@ export function WebcamDisplay({ isAsciiBalanceLow }: WebcamProps) {
       {isConnected && isAsciiBalanceLow && (
         <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
           <div className="w-full h-full items-center justify-center rounded-lg p-4 flex flex-col max-h-[360px] max-w-[360px] mx-auto bg-[#151018] space-y-4">
-            <p className="text-center text-white">It looks like you don&apos;t have enough $ASCII in your wallet and you need to have at least 500K $ASCII to be able to use the features on this frame.</p>
+            <p className="text-center text-white">It looks like you don&apos;t have enough $ASCII in your wallet and you need to have at least 300K $ASCII to be able to use the features on this frame.</p>
             <Button
               onClick={buyAsciiToken}
               variant="secondary"
