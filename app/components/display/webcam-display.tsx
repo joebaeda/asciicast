@@ -74,38 +74,29 @@ export function WebcamDisplay({ isAsciiBalanceLow }: WebcamProps) {
     sdk.actions.openUrl('https://clank.fun/t/0x0A5053E62B6a452300D18AeEf495C89DDF4C7B05')
   }, [])
 
-  const blobToDataURL = (blob: Blob): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-  };
-
   const handleSaveAsVideo = useCallback(async () => {
     setIsGenerating(true);
     try {
+      // Generate the video Blob using the generateVideo function
       const videoBlob = await generateVideo();
       setIsGenerating(false);
 
+      // Check if the generated Blob is valid
       if (!videoBlob) {
         throw new Error("Video Blob is empty or undefined.");
       }
 
-      const videoUrl = await blobToDataURL(videoBlob); // Convert Blob to Base64 Data URL
+      // Create a URL for the Blob
+      const videoUrl = URL.createObjectURL(videoBlob);
+
+      // Save to localStorage
       localStorage.setItem("savedVideoUrl", videoUrl);
       setIsSuccess(true);
     } catch (error) {
-      console.error("Failed to save video:", error);
+      console.error("Failed to save As Video:", error);
+      throw error; // Rethrow the error for higher-level handling
     }
   }, [generateVideo]);
-
-  const handleDownloadVideo = useCallback(() => {
-    const savedVideoUrl = localStorage.getItem("savedVideoUrl");
-    if (savedVideoUrl) {
-      sdk.actions.openUrl(savedVideoUrl); // Now works with Data URL
-    }
-  }, []);
 
   return (
     <DisplayContainer>
@@ -185,28 +176,22 @@ export function WebcamDisplay({ isAsciiBalanceLow }: WebcamProps) {
       {/* Download Video */}
       {isSuccess && (
         <div className="fixed p-4 flex flex-col space-y-4 inset-0 items-center justify-center z-50 bg-[#17101f]">
-          <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
-          <video
-            className="w-full rounded-xl max-w-[360px] mx-auto"
-            muted
-            playsInline
-            loop
-            preload="auto"
-            controls
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <source
-              src={localStorage.getItem("savedVideoUrl") as string}
-              type="video/mp4"
-            />
-            Your browser does not support the video tag.
-          </video>
-          <button
-            onClick={handleDownloadVideo}
-            className="w-full max-w-[360px] bg-blue-500 text-white px-4 py-2 rounded-xl"
-          >
-            Download Video
-          </button>
+            <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
+            <video
+              className="w-full rounded-xl max-w-[360px] mx-auto"
+              muted
+              playsInline
+              loop
+              preload="auto"
+              controls
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <source
+                src={localStorage.getItem("savedVideoUrl") as string}
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
         </div>
       )}
 
