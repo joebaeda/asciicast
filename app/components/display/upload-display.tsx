@@ -81,14 +81,13 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
   }, [])
 
   // Open the saved video URL using sdk.actions.openUrl
-  useEffect(() => {
-    if (isSuccess) {
-      const savedVideoUrl = localStorage.getItem("savedVideoUrl");
-      sdk.actions.openUrl(savedVideoUrl as string);
-      // Optionally clear the stored URL after opening
-      localStorage.removeItem("savedVideoUrl");
-    }
-  }, [isSuccess]);
+  const handleDownloadVideo = useCallback(() => {
+    const savedVideoUrl = localStorage.getItem("savedVideoUrl");
+    sdk.actions.openUrl(savedVideoUrl as string);
+    setIsSuccess(false);
+    // Optionally clear the stored URL after opening
+    localStorage.removeItem("savedVideoUrl");
+  }, [])
 
   const handleSaveAsVideo = useCallback(async () => {
     setIsGenerating(true);
@@ -154,7 +153,7 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
             disabled={!isConnected || !hasUpload || !isAsciiActive || isGenerating || isAsciiBalanceLow}
             className="absolute right-12 px-4 py-2 rounded-full"
           >
-            {isGenerating ? "Generating..." : isSuccess ? "Saved! 🎉" : "Download"}
+            {isGenerating ? "Generating..." : isSuccess ? "Saved! 🎉" : "Generate"}
           </Button>
         ) : (
           <Button
@@ -200,9 +199,39 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
         </div>
       </DisplayFooterContainer>
 
+      {/* Download Video */}
+      {isSuccess && (
+        <div className="fixed -mt-20 p-4 flex inset-0 items-center justify-center z-50 bg-[#17101f]">
+          <div className="rounded-xl flex flex-col max-h-[400px] max-w-[384px] mx-auto space-y-4">
+            <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
+            <video
+              className="w-[384px] h-[384px] rounded-xl"
+              muted
+              playsInline
+              loop
+              preload="auto"
+              controls
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <source
+                src={localStorage.getItem("savedVideoUrl") as string}
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+            <button
+              onClick={handleDownloadVideo}
+              className="bg-blue-500 text-white px-4 py-2 rounded-xl"
+            >
+              Download Video
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Not Video */}
       {onlyVideo && (
-        <div className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
+        <div onClick={() => setOnlyVideo(false)} className="fixed flex p-4 inset-0 items-center justify-center z-50 bg-gray-900 bg-opacity-65">
           <div className="w-full h-full items-center justify-center rounded-lg p-4 flex flex-col max-h-[360px] max-w-[360px] mx-auto bg-[#250f31] space-y-4">
             <p className="text-center text-white">Sorry, ASCII Art Animation Frame only supports Video to be converted into Animation.</p>
             <Button
