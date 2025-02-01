@@ -82,11 +82,7 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
 
   // Open the saved video URL using sdk.actions.openUrl
   const handleDownloadVideo = useCallback(() => {
-    const savedVideoUrl = localStorage.getItem("savedVideoUrl");
-    sdk.actions.openUrl(savedVideoUrl as string);
-    setIsSuccess(false);
-    // Optionally clear the stored URL after opening
-    localStorage.removeItem("savedVideoUrl");
+    sdk.actions.openUrl(localStorage.getItem("savedVideoUrl") as string);
   }, [])
 
   const handleSaveAsVideo = useCallback(async () => {
@@ -201,31 +197,29 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
 
       {/* Download Video */}
       {isSuccess && (
-        <div className="fixed -mt-20 p-4 flex inset-0 items-center justify-center z-50 bg-[#17101f]">
-          <div className="rounded-xl flex flex-col max-h-[400px] max-w-[384px] mx-auto space-y-4">
-            <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
-            <video
-              className="w-[384px] h-[384px] rounded-xl"
-              muted
-              playsInline
-              loop
-              preload="auto"
-              controls
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <source
-                src={localStorage.getItem("savedVideoUrl") as string}
-                type="video/mp4"
-              />
-              Your browser does not support the video tag.
-            </video>
-            <button
-              onClick={handleDownloadVideo}
-              className="bg-blue-500 text-white px-4 py-2 rounded-xl"
-            >
-              Download Video
-            </button>
-          </div>
+        <div className="fixed p-4 flex flex-col space-y-4 inset-0 items-center justify-center z-50 bg-[#17101f]">
+          <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
+          <video
+            className="w-full rounded-xl max-w-[360px] mx-auto"
+            muted
+            playsInline
+            loop
+            preload="auto"
+            controls
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <source
+              src={localStorage.getItem("savedVideoUrl") as string}
+              type="video/mp4"
+            />
+            Your browser does not support the video tag.
+          </video>
+          <button
+            onClick={handleDownloadVideo}
+            className="w-full max-w-[360px] bg-blue-500 text-white px-4 py-2 rounded-xl"
+          >
+            Download Video
+          </button>
         </div>
       )}
 
