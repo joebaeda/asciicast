@@ -215,7 +215,7 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
             Your browser does not support the video tag.
           </video>
           <button
-            onClick={handleDownloadVideo}
+            onClick={() => handleDownloadVideo()}
             className="w-full max-w-[360px] bg-blue-500 text-white px-4 py-2 rounded-xl"
           >
             Download Video
