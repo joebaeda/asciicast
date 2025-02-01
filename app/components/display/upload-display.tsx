@@ -193,7 +193,6 @@ export function UploadDisplay({ isAsciiBalanceLow }: UploadProps) {
       {/* Download Video */}
       {isSuccess && (
         <div className="fixed p-4 flex flex-col space-y-4 inset-0 items-center justify-center z-50 bg-[#17101f]">
-          <p className="text-2xl py-2 font-extrabold">Congratulations 🎉</p>
           <video
             className="w-full rounded-xl max-w-[360px] mx-auto"
             muted
